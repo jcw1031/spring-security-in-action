@@ -53,3 +53,44 @@ curl -u user:[비밀번호] http://localhost:8080/hello
 
 `AuthenticationProvider`는 인증 논리를 정의하고 사용자와 암호의 관리를 위임한다.
 기본 구현은 `UserDetailsService` 및 `PasswordEncoder`에 제공된 기본 구현을 이용한다.
+
+## 03. 기본 구성 재정의
+애플리케이션을 개발할 때 맞춤형 구현체를 연결하고, 애플리케이션에 맞게 보안을 적용하기 위해서는 기본 구성을 재정의할 수 있어야 한다.
+여러 방법으로 재정의할 수 있지만, 이러한 유연성을 남용해서는 안 된다. 여러 옵션 중에 선택하는 방법을 배워야 한다.
+
+### `UserDetailsService` 구성 요소 재정의
+나중에 자세한 내용을 배우겠지만, 이번에는 직접 구현체를 만들지 않고 스프링 시큐리티에 있는 `InMemoryUserDetailsManager`라는 구현체를 이용한다.
+> `InMemoryUserDetailsManager` 구현체는 운영 단계 애플리케이션을 위한 것은 아니며, 예제나 개념 증명용으로 좋은 구현체이다.
+> 사용자만으로 충분할 때는 다른 부분을 구현하는 데 시간을 쓸 필요가 없다!
+
+`chapter2.config` 패키지에 `UserDetailsServiceConfig` 클래스를 통해 `UserDetailsService` 구현체를 빈으로 수동 등록했다.
+이 코드를 추가함으로써 애플리케이션 실행 시, 콘솔에 더이상 암호가 출력되지 않는다.
+
+하지만 두 가지 이유로 아직 Endpoint에 접근할 수 없다.
+- 사용자가 없다.
+- `PasswordEncoder`가 없다
+
+단계별로 해결한다.
+1. 자격 증명(사용자 이름 및 암호)이 있는 사용자를 하나 이상 만든다.
+2. 사용자를 `UserDetailsService`에서 관리하도록 추가한다.
+3. `UserDetailsService`가 저장하고 관리하는 암호를 이용해, 주어진 암호를 검증하는 `PasswordEncoder` 형식의 빈을 정의한다.
+
+1번과 2번은, `UserDetailsServiceConfig`에서 `org.springframework.security.core.userdetails.User` 클래스로 사용자를 나타내는 객체를 생성해 추가하였다.
+
+하지만 `UserDetailsService`를 재정의하면 `PasswordEncoder`도 다시 선언해야 한다.
+지금은 Endpoint를 호출해도 예외가 발생한다. 아직 스프링 시큐리티가 암호를 관리하는 방법을 모른다는 것을 인식하고 오류를 생성하는 것이다.
+
+`PasswordEncoderConfig`에서 `NoOpPasswordEncoder`를 컨텍스트에 추가하였다.
+> `NoOpPasswordEncoder` 인스턴스는 암호화나 해시를 적용하지 않고 일반 텍스트처럼 처리하기 때문에, 운영 단계에서는 사용하면 안 된다. 예제에서 암호의 해싱 알고리즘을
+> 신경 쓰고 싶지 않을 때 사용하기 좋은 옵션이다.
+
+### Endpoint 권한 부여 구성 재정의
+우리는 애플리케이션의 모든 Endpoint를 보호할 필요가 없고, 보안이 필요한 Endpoint에 다른 권한 부여 규칙을 선택해야 할 수도 있다.
+이러한 변경을 위해 설정이 필요하다.
+> 예전에는 `WebSecurityConfigurerAdapter`를 상속받아 `configure(HttpSecurity http)` 메서드를 재정의하였지만,
+> 최근에는 `SecurityFilterChain` 빈을 통해 HttpSercurity를 구성할 수 있다.
+
+`chapter2.config` 패키지의 `SecurityConfig` 클래스가 해당 설정을 담당한다.
+
+지금까지의 방법은 `UserDetailsService`와 `PasswordEncoder`를 빈으로 등록해 재정의하는 방법이었다.
+다른 방법은 AuthenticationManager를 설정하는 방법도 있다.
