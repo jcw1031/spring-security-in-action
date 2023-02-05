@@ -93,4 +93,23 @@ curl -u user:[비밀번호] http://localhost:8080/hello
 `chapter2.config` 패키지의 `SecurityConfig` 클래스가 해당 설정을 담당한다.
 
 지금까지의 방법은 `UserDetailsService`와 `PasswordEncoder`를 빈으로 등록해 재정의하는 방법이었다.
-다른 방법은 AuthenticationManager를 설정하는 방법도 있다.
+다른 방법은 `AuthenticationManager`를 설정하는 방법도 있다.
+
+### AuthenticationProvider 재정의
+지금까지 Spring Security Architecture에서 `UserDetailsService` 및 `PasswordEncoder`의 목적과 이를 구성하는 방법을 배웠다.
+(사실 두 개의 방법이 나오지만, 설명하지 않은 방법은 추천하지 않기 때문이다.)
+이제 이들 구성 요소에 작업을 위임하는 `AuthenticationProvider`도 맞춤 구성 하는 방법을 배워보자. -> 인증 공급자
+
+> `AuthenticationProvider`는 인증 논리를 구현한다. `AuthenticationManager`에서 요청을 받은 후 사용자를 찾는 작업은 `UserDetailsService`에게,
+> 암호를 검증하는 작업을 `PasswordEncoder`에 위임한다.
+
+CustomAuthenticationProvider 클래스에서 AuthenticationProvider를 재정의 하였다.
+
+## 정리
+- Spring Security 의존성을 추가하면, Spring Boot가 약간의 기본 구성을 제공한다.
+- 인증과 인가를 위한 기본 구성 요소인 UserDetailsService와 PasswordEncoder, AuthenticationProvider를 구현했다.
+- User 클래스로 사용자를 정의할 수 있다. 사용자는 사용자 이름, 암호, 권한을 가져야 한다. 권한은 사용자가 애플리케이션 컨텍스트에서 수행할 수 있는 작업을 지정한다.
+- Spring Security는 UserDetailsService의 간단한 구현체인 InMemoryUserDetailsManager를 제공한다. UserDetailsService의 인스턴스와 같은 사용자를 추가하여
+애플리케이션 메모리에서 사용자를 관리할 수 있다.
+- NoOpPasswordEncoder는 PasswordEncoder의 계약을 구현하며, 암호를 일반 텍스트로 처리한다. 따라서 학습 용도로 사용하기는 적합하지만 운영 단계 애플리케이션에는 적합하지 않다.
+- AuthenticationProvider 계약을 이용하여 애플리케이션의 맞춤형 인증 논리를 구현할 수 있다.
